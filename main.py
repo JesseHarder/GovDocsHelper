@@ -1,7 +1,8 @@
 """A script to search for gov-docs of interest."""
 from csv import reader as csv_reader
+from csv import writer as csv_writer
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
 def simplify_sudoc_number(sudoc_number: str) -> str:
@@ -18,13 +19,16 @@ def simplify_sudoc_number(sudoc_number: str) -> str:
 
 def perform_sudoc_match(
     fdlp_reference_set_file: Path,
-    scu_weeding_set_file: Path
+    scu_weeding_set_file: Path,
+    output_file: Optional[Path] = None
 ):
     """Search for entries in the reference set from the weeding set .
 
     Args:
         fdlp_reference_set_file: a path to the reference set CSV file.
         scu_weeding_set_file: a path to the CSV file containing the weeding set.
+        output_file: where the results from the search should be saved. If not
+            provided, the results will only be returned.
 
     Returns:
         A dictionary mapping row numbers to the rows (list of strings with the first
@@ -58,6 +62,29 @@ def perform_sudoc_match(
             if simplify_sudoc_number(fdlp_sudoc_number) in scu_sudoc_numbers:
                 rows_of_interest[row_number] = row
 
+    # ------ Step 3 - Optionally write the results to file. -----
+    if output_file:
+        # Create the results that we want to write out.
+        rows = [
+            row + [row_number] for row_number, row in rows_of_interest.items()
+        ]
+
+        # Create header row.
+        headers = ["" for _ in rows[0]]
+        headers[0] = "Document Number"
+        headers[1] = "Year(s)"
+        headers[2] = "Title"
+        headers[3] = "Reviewed Date"
+        headers[-1] = "Original Row Number"
+        # Insert it at the front of the rows to write out.
+        rows.insert(0, headers)
+
+        # Write to file.
+        with output_file.open("w") as file_pointer:
+            writer = csv_writer(file_pointer)
+            writer.writerows(rows)
+
+    # ------ Step 4 - Return -----
     return rows_of_interest
 
 
@@ -68,6 +95,7 @@ if __name__ == "__main__":
         ),
         scu_weeding_set_file=Path(
             "./spreadsheets/SantaClara20240124.csv"
-        )
+        ),
+        output_file=Path("./spreadsheets/weeding_entries_to_review.csv")
     )
-    print(len(rows_of_interest))
+    print(f"Found {len(rows_of_interest)} matches.")
