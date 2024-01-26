@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gov_docs_helper"
+version = "0.0.1"
+authors = [
+    {name = "Jesse Harder", email = "jessehharder@gmail.com"},
+    {name = "Jesse Randolph", email = "lafingfoxx@gmail.com"},
+]
+description = "Code for helping make working with gov-docs suck less."
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "bandit",
+    "black",
+    "flake8",
+    "isort",
+    "mypy",
+    "pydocstyle",
+    "pytest",
+    "pytest-cov",
+    "pytest-dotenv",
+    "types-requests"
+]
