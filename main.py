@@ -1,8 +1,19 @@
 """A script to search for gov-docs of interest."""
+from argparse import ArgumentParser
 from csv import reader as csv_reader
 from csv import writer as csv_writer
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
+# Build the argument parser for main.
+parser = ArgumentParser(prog="GovDocsHelper", description="Searches for sudoc matches.")
+parser.add_argument(
+    "--fdlp",
+    type=str,
+    default="./spreadsheets/PreviousFDLPDisposalListOffers-2023-12-2.csv",
+)
+parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClara20240124.csv")
+parser.add_argument("--out", type=str, default="")
 
 
 def simplify_sudoc_number(sudoc_number: str) -> str:
@@ -20,7 +31,7 @@ def simplify_sudoc_number(sudoc_number: str) -> str:
 def perform_sudoc_match(
     fdlp_reference_set_file: Path,
     scu_weeding_set_file: Path,
-    output_file: Optional[Path] = None
+    output_file: Optional[Path] = None,
 ):
     """Search for entries in the reference set from the weeding set .
 
@@ -65,9 +76,7 @@ def perform_sudoc_match(
     # ------ Step 3 - Optionally write the results to file. -----
     if output_file:
         # Create the results that we want to write out.
-        rows = [
-            row + [row_number] for row_number, row in rows_of_interest.items()
-        ]
+        rows = [row + [row_number] for row_number, row in rows_of_interest.items()]
 
         # Create header row.
         headers = ["" for _ in rows[0]]
@@ -89,13 +98,10 @@ def perform_sudoc_match(
 
 
 if __name__ == "__main__":
+    args = parser.parse_args()
     rows_of_interest = perform_sudoc_match(
-        fdlp_reference_set_file=Path(
-            "./spreadsheets/PreviousFDLPDisposalListOffers-2023-12-2.csv"
-        ),
-        scu_weeding_set_file=Path(
-            "./spreadsheets/SantaClara20240124.csv"
-        ),
-        output_file=Path("./spreadsheets/weeding_entries_to_review.csv")
+        fdlp_reference_set_file=Path(args.fdlp),
+        scu_weeding_set_file=Path(args.scu),
+        output_file=Path(args.out) if args.out else None,
     )
     print(f"Found {len(rows_of_interest)} matches.")
