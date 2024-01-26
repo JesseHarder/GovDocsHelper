@@ -12,8 +12,14 @@ parser.add_argument(
     type=str,
     default="./spreadsheets/PreviousFDLPDisposalListOffers-2023-12-2.csv",
 )
-parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClara20240124.csv")
-parser.add_argument("--out", type=str, default="")
+parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClaraSDocs.csv")
+parser.add_argument(
+    "--out",
+    type=str,
+    default="./spreadsheets/output.csv",
+    help="The path to where the results CSV file should be written. Change to an empty "
+         "string (\"\") to avoid writing the results to file.",
+)
 
 
 def simplify_sudoc_number(sudoc_number: str) -> str:
@@ -49,15 +55,22 @@ def perform_sudoc_match(
     # Create the set of sudoc numbers from our weeding set that we want to locate in
     # the FDLP set.
     scu_sudoc_numbers: set = set()
+    scu_sudoc_number_rows: Dict[str, str] = {}
     with scu_weeding_set_file.open("r") as file_pointer:
         reader = csv_reader(file_pointer)
         # Grab the first row which has the headers.
         headers: List[str] = next(reader)
         # Build a set from the rest of the rows.
-        for row in reader:
+        for row_number, row in enumerate(reader, 1):
             scu_sudoc_number: str = row[headers.index("Document Number")]
-            scu_sudoc_number = simplify_sudoc_number(scu_sudoc_number)
-            scu_sudoc_numbers.add(scu_sudoc_number)
+            simplified_scu_sudoc_number = simplify_sudoc_number(scu_sudoc_number)
+            scu_sudoc_numbers.add(simplified_scu_sudoc_number)
+            # Record the row the sudoc number was found on.
+            existing_rows = scu_sudoc_number_rows.get(simplified_scu_sudoc_number, None)
+            if existing_rows is None:
+                scu_sudoc_number_rows[simplified_scu_sudoc_number] = f"{row_number}"
+            else:
+                scu_sudoc_number_rows[simplified_scu_sudoc_number] += f",{row_number}"
 
     # ------ Step 2 - Search the FDLP reference -----
     rows_of_interest: Dict[int, List[str]] = {}
@@ -76,7 +89,10 @@ def perform_sudoc_match(
     # ------ Step 3 - Optionally write the results to file. -----
     if output_file:
         # Create the results that we want to write out.
-        rows = [row + [row_number] for row_number, row in rows_of_interest.items()]
+        rows = [
+            row + [row_number, scu_sudoc_number_rows[simplify_sudoc_number(row[0])]]
+            for row_number, row in rows_of_interest.items()
+        ]
 
         # Create header row.
         headers = ["" for _ in rows[0]]
@@ -84,7 +100,8 @@ def perform_sudoc_match(
         headers[1] = "Year(s)"
         headers[2] = "Title"
         headers[3] = "Reviewed Date"
-        headers[-1] = "Original Row Number"
+        headers[-2] = "Original Row in FDLP"
+        headers[-1] = "Row(s) in SCU file"
         # Insert it at the front of the rows to write out.
         rows.insert(0, headers)
 
