@@ -61,7 +61,7 @@ def perform_sudoc_match(
         # Grab the first row which has the headers.
         headers: List[str] = next(reader)
         # Build a set from the rest of the rows.
-        for row_number, row in enumerate(reader, 1):
+        for row_number, row in enumerate(reader, 2):
             scu_sudoc_number: str = row[headers.index("Document Number")]
             simplified_scu_sudoc_number = simplify_sudoc_number(scu_sudoc_number)
             scu_sudoc_numbers.add(simplified_scu_sudoc_number)
