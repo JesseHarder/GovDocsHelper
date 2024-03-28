@@ -37,3 +37,22 @@ def write_fdlp_matches_to_file(
     with fdlp_matches_output_file.open("w") as file_pointer:
         writer = csv_writer(file_pointer)
         writer.writerows(rows)
+
+
+def write_scu_file_rows_matched(
+    scu_rows_matched: List[List[str]],
+    headers_row: List[str],
+    output_dir: Path,
+    file_name: str = "scu_rows_matched.csv",
+) -> None:
+    # Create the directory into which to write the output.
+    output_dir.mkdir(parents=True, exist_ok=True)
+    # ----- Step 3A - Write our the matched FDLP rows -----
+    scu_rows_matched_output_file = output_dir / file_name
+    # Create the results that we want to write out.
+    rows = [headers_row] + scu_rows_matched
+
+    # Write to file.
+    with scu_rows_matched_output_file.open("w") as file_pointer:
+        writer = csv_writer(file_pointer)
+        writer.writerows(rows)

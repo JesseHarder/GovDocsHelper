@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from gov_docs_helper.utils import simplify_sudoc_number
-from gov_docs_helper.writers import write_fdlp_matches_to_file
+from gov_docs_helper.writers import write_fdlp_matches_to_file, \
+    write_scu_file_rows_matched
 
 # Build the argument parser for main.
 parser = ArgumentParser(prog="GovDocsHelper", description="Searches for sudoc matches.")
@@ -108,6 +109,11 @@ def perform_sudoc_match(
         write_fdlp_matches_to_file(
             fdlp_rows_of_interest=fdlp_rows_of_interest,
             scu_sudoc_number_to_row_nums=scu_sudoc_number_to_row_nums,
+            output_dir=output_dir,
+        )
+        write_scu_file_rows_matched(
+            scu_rows_matched=scu_rows_matched,
+            headers_row=scu_sudoc_headers,
             output_dir=output_dir,
         )
 
