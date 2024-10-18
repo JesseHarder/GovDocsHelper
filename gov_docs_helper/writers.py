@@ -95,7 +95,7 @@ def write_scu_file_rows_not_matched(
             file_index += 1
 
     # If we have any rows left unwritten, write them out as well.
-    if len(rows_to_write) < 0:
+    if len(rows_to_write) > 0:
         # Write out to file.
         write_out(rows_to_write=rows_to_write, file_index=file_index)
         # Reset the rows to write
