@@ -1,7 +1,7 @@
 """This file contains code for writing the results of our GovDocs search to file."""
 from csv import writer as csv_writer
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from gov_docs_helper.utils import simplify_sudoc_number
 
@@ -16,7 +16,7 @@ def write_fdlp_matches_to_file(
     output_dir.mkdir(parents=True, exist_ok=True)
     fdlp_matches_output_file = output_dir / file_name
     # Create the results that we want to write out.
-    rows = [
+    rows: List[List[Any]] = [
         row + [row_number, scu_sudoc_number_to_row_nums[simplify_sudoc_number(row[0])]]
         for row_number, row in fdlp_rows_of_interest.items()
     ]
@@ -63,7 +63,7 @@ def write_scu_file_rows_not_matched(
     not_matches_dir_name: str = "scu_rows_not_matched",
     file_name_start: str = "rows_not_matched",
     start_index: int = 1,
-    max_rows: int = 250
+    max_rows: int = 250,
 ) -> None:
     # Create the directory into which to write the output.
     not_matches_dir: Path = output_dir / not_matches_dir_name
