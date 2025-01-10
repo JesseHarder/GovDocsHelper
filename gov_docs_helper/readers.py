@@ -2,7 +2,7 @@
 
 from csv import reader as csv_reader
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from gov_docs_helper.utils import simplify_sudoc_number
 
@@ -67,3 +67,63 @@ class SCUWeedingSet:
                     self.sudoc_number_to_row_nums[
                         simplified_scu_sudoc_number
                     ] += f",{row_number}"
+
+
+class FDLPReader:
+    """Class to read through an FDLP file and extract the needed information."""
+
+    def __init__(self, scu_weeding_set: SCUWeedingSet):
+        """Initialize an FDLPReader.
+
+        Args:
+            scu_weeding_set: an SCUWeedingSet instance.
+        """
+        # The SCUWeedingSet off which on which to match.
+        self.scu_weeding_set: SCUWeedingSet = scu_weeding_set
+
+        self.fdlp_rows_of_interest: Dict[int, List[str]] = {}
+        self.scu_sudoc_row_nums_for_matches: Set[int] = set()
+        self.scu_rows_not_matched: List[List[str]] = []
+        self.scu_rows_matched: List[List[str]] = []
+
+    def reset(self) -> None:
+        """Empty the contents of this SCUWeedingSet."""
+        self.fdlp_rows_of_interest = {}
+        self.scu_sudoc_row_nums_for_matches = set()
+        self.scu_rows_not_matched = []
+        self.scu_rows_matched = []
+
+    def read_from_file(self, fdlp_reference_set_file: Path) -> None:
+        """Read through an FDLP reference file and find matching information."""
+
+        with fdlp_reference_set_file.open("r") as file_pointer:
+            reader = csv_reader(file_pointer)
+            # Strip the first two rows. They don't have useful information.
+            next(reader)
+            next(reader)
+            # Iterate over the rest, looking for matches.
+            for fdlp_row_number, row in enumerate(reader, 3):
+                # Get the sudoc number from the first column
+                fdlp_sudoc_number: str = row[0]
+                simplified_sudoc_number = simplify_sudoc_number(fdlp_sudoc_number)
+                if simplified_sudoc_number in self.scu_weeding_set.sudoc_numbers:
+                    # Record the FDLP row as of interest.
+                    self.fdlp_rows_of_interest[fdlp_row_number] = row
+                    rows_nums = self.scu_weeding_set.sudoc_number_to_row_nums[
+                        simplified_sudoc_number
+                    ].split(",")
+                    for row_num in rows_nums:
+                        self.scu_sudoc_row_nums_for_matches.add(int(row_num))
+
+    def separate_rows(self) -> None:
+        """Separate the matched SCU rows from the unmatched.
+
+        This function should be run after read_from_file() has been used to read in
+        information from one or more FDLP reference files.
+        """
+        # Split the rows that need removing from the ones that don't.
+        for scu_row_num, row in self.scu_weeding_set.sudoc_row_num_to_row.items():
+            if scu_row_num in self.scu_sudoc_row_nums_for_matches:
+                self.scu_rows_matched.append(row)
+            else:
+                self.scu_rows_not_matched.append(row)
