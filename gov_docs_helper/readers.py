@@ -124,7 +124,7 @@ class FDLPReader:
         with fdlp_reference_set_file.open("r") as file_pointer:
             reader = csv_reader(file_pointer)
             # Iterate over the rest, looking for matches.
-            for fdlp_row_number, row in enumerate(reader, skip_rows):
+            for fdlp_row_number, row in enumerate(reader, skip_rows + 1):
                 # Skip the row if it has an invalid classification type:
                 if classification_type:
                     if row[classification_type_column_index] != classification_type:
