@@ -93,18 +93,44 @@ class FDLPReader:
         self.scu_rows_not_matched = []
         self.scu_rows_matched = []
 
-    def read_from_file(self, fdlp_reference_set_file: Path) -> None:
-        """Read through an FDLP reference file and find matching information."""
+    def read_from_file(
+        self,
+        fdlp_reference_set_file: Path,
+        skip_rows: int = 1,
+        sudoc_number_column_index: int = 2,
+        classification_type: Optional[str] = "SuDoc",
+        classification_type_column_index: int = 1,
+    ) -> None:
+        """Read through an FDLP reference file and find matching information.
+
+        Args:
+            fdlp_reference_set_file: the csv file from which to read.
+            skip_rows: the number of rows to skip at the top of the file before reading
+                for actual content. Typically, these are empty rows or a header row.
+                Default = 1.
+            sudoc_number_column_index: The index for the column that contains the sudoc
+                numbers, where the first column in the file has index 0. Default = 2.
+            classification_type: a string to match for the correct classification type.
+                Any row with a different classifiction type will be ignored. If None,
+                then all classification types will be accepted. Default = "SuDoc".
+            classification_type_column_index: The index for the column that
+                contains the classification_types, where the first column in the file
+                has index 0. Default = 1.
+
+        Returns:
+            None
+        """
 
         with fdlp_reference_set_file.open("r") as file_pointer:
             reader = csv_reader(file_pointer)
-            # Strip the first two rows. They don't have useful information.
-            next(reader)
-            next(reader)
             # Iterate over the rest, looking for matches.
-            for fdlp_row_number, row in enumerate(reader, 3):
-                # Get the sudoc number from the first column
-                fdlp_sudoc_number: str = row[0]
+            for fdlp_row_number, row in enumerate(reader, skip_rows):
+                # Skip the row if it has an invalid classification type:
+                if classification_type:
+                    if row[classification_type_column_index] != classification_type:
+                        continue
+                # Get the sudoc number from the specified column
+                fdlp_sudoc_number: str = row[sudoc_number_column_index]
                 simplified_sudoc_number = simplify_sudoc_number(fdlp_sudoc_number)
                 if simplified_sudoc_number in self.scu_weeding_set.sudoc_numbers:
                     # Record the FDLP row as of interest.

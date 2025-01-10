@@ -11,13 +11,20 @@ def write_fdlp_matches_to_file(
     scu_sudoc_number_to_row_nums: Dict[str, str],
     output_dir: Path,
     file_name: str = "FDLP_rows.csv",
+    fdlp_sudoc_number_column_index: int = 2,
 ) -> None:
     # Create the directory into which to write the output.
     output_dir.mkdir(parents=True, exist_ok=True)
     fdlp_matches_output_file = output_dir / file_name
     # Create the results that we want to write out.
     rows: List[List[Any]] = [
-        row + [row_number, scu_sudoc_number_to_row_nums[simplify_sudoc_number(row[0])]]
+        row
+        + [
+            row_number,
+            scu_sudoc_number_to_row_nums[
+                simplify_sudoc_number(row[fdlp_sudoc_number_column_index])
+            ],
+        ]
         for row_number, row in fdlp_rows_of_interest.items()
     ]
 

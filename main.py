@@ -15,7 +15,7 @@ parser = ArgumentParser(prog="GovDocsHelper", description="Searches for sudoc ma
 parser.add_argument(
     "--fdlp",
     type=str,
-    default="./spreadsheets/PreviousFDLPDisposalListOffers-2023-12-2.csv",
+    default="./spreadsheets/PreviousFDLPDisposalListOffersThroughAugust2021.csv",
 )
 parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClaraTDDocs.csv")
 parser.add_argument(
@@ -32,6 +32,7 @@ def perform_sudoc_match(
     fdlp_reference_set_file: Path,
     scu_weeding_set_file: Path,
     output_dir: Optional[Path] = None,
+    fdlp_sudoc_number_column_index: int = 2,
 ):
     """Search for entries in the reference set from the weeding set .
 
@@ -40,6 +41,9 @@ def perform_sudoc_match(
         scu_weeding_set_file: a path to the CSV file containing the weeding set.
         output_dir: where the results from the search should be saved. If not
             provided, the results will only be returned.
+        fdlp_sudoc_number_column_index: The index for the column that contains the sudoc
+            numbers in the FDLP file, where the first column in the file has index 0.
+            Default = 2.
 
     Returns:
         A dictionary mapping row numbers to the rows (list of strings with the first
@@ -62,6 +66,7 @@ def perform_sudoc_match(
             fdlp_rows_of_interest=fdlp_reader.fdlp_rows_of_interest,
             scu_sudoc_number_to_row_nums=scu_weeding_set.sudoc_number_to_row_nums,
             output_dir=output_dir,
+            fdlp_sudoc_number_column_index=fdlp_sudoc_number_column_index,
         )
         write_scu_file_rows_matched(
             scu_rows_matched=fdlp_reader.scu_rows_matched,
