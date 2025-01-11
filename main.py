@@ -5,7 +5,6 @@ from typing import Optional
 
 from gov_docs_helper.readers import FDLPReader, SCUWeedingSet
 from gov_docs_helper.writers import (
-    write_fdlp_matches_to_file,
     write_scu_file_rows_matched,
     write_scu_file_rows_not_matched,
 )
@@ -38,8 +37,7 @@ def perform_sudoc_match(
     fdlp_reference_set_file_post_exchange: Path,
     scu_weeding_set_file: Path,
     output_dir: Optional[Path] = None,
-    fdlp_sudoc_number_column_index: int = 2,
-):
+) -> FDLPReader:
     """Search for entries in the reference set from the weeding set .
 
     Args:
@@ -71,6 +69,7 @@ def perform_sudoc_match(
         sudoc_number_column_index=2,
         classification_type="SuDoc",
         classification_type_column_index=1,
+        header_row_index=0,
     )
     fdlp_reader.read_from_file(
         fdlp_reference_set_file_post_exchange,
@@ -78,20 +77,14 @@ def perform_sudoc_match(
         sudoc_number_column_index=6,
         classification_type="SuDoc",
         classification_type_column_index=0,
+        header_row_index=None,
     )
     fdlp_reader.separate_rows()
 
     # ------ Step 3 - Optionally write the results to file. -----
     if output_dir:
         # Write out the FDLP file rows for which matches were found.
-        # TODO: Add this back in when we figure out how to get it to work with
-        #  different SuDoc column indices.
-        # write_fdlp_matches_to_file(
-        #     fdlp_rows_of_interest=fdlp_reader.fdlp_rows_of_interest,
-        #     scu_sudoc_number_to_row_nums=scu_weeding_set.sudoc_number_to_row_nums,
-        #     output_dir=output_dir,
-        #     fdlp_sudoc_number_column_index=fdlp_sudoc_number_column_index,
-        # )
+        fdlp_reader.write_matches_to_file(output_dir=output_dir)
         write_scu_file_rows_matched(
             scu_rows_matched=fdlp_reader.scu_rows_matched,
             headers_row=scu_weeding_set.scu_sudoc_headers,
@@ -104,15 +97,19 @@ def perform_sudoc_match(
         )
 
     # ------ Step 4 - Return -----
-    return fdlp_reader.fdlp_rows_of_interest
+    return fdlp_reader
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    fdlp_rows_of_interest = perform_sudoc_match(
+    fdlp_reader = perform_sudoc_match(
         fdlp_reference_set_file_pre_exchange=Path(args.fdlp_pre),
         fdlp_reference_set_file_post_exchange=Path(args.fdlp_post),
         scu_weeding_set_file=Path(args.scu),
         output_dir=Path(args.out) if args.out else None,
     )
-    print(f"Found {len(fdlp_rows_of_interest)} matches.")
+    num_rows_of_interest = sum(
+        len(reference_doc.rows_of_interest)
+        for reference_doc in fdlp_reader.reference_docs
+    )
+    print(f"Found {num_rows_of_interest} matches.")
