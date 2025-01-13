@@ -63,7 +63,6 @@ def perform_sudoc_match(
     scu_weeding_set = WeedingSet(scu_weeding_set_file)
 
     # ------ Step 2 - Search the FDLP reference -----
-    fdlp_reader = FDLPSearcher(scu_weeding_set)
     fdlp_reference_docs: List[FDLPReferenceDoc] = [
         FDLPReferenceDoc(
             fdlp_reference_set_file_pre_exchange,
@@ -82,9 +81,8 @@ def perform_sudoc_match(
             header_row_index=None,
         ),
     ]
-    fdlp_reader.read_from_file(fdlp_reference_docs[0])
-    fdlp_reader.read_from_file(fdlp_reference_docs[1])
-    fdlp_reader.separate_rows()
+    fdlp_reader = FDLPSearcher(scu_weeding_set)
+    fdlp_reader.search_fdlp_references(fdlp_reference_docs)
 
     # ------ Step 3 - Optionally write the results to file. -----
     if output_dir:

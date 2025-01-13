@@ -6,7 +6,7 @@ from csv import reader as csv_reader
 from csv import writer as csv_writer
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from gov_docs_helper.utils import simplify_sudoc_number
 from gov_docs_helper.weeding_set import WeedingSet
@@ -119,14 +119,14 @@ class FDLPSearcher:
     #                                  Searching Steps
     # ----------------------------------------------------------------------------------
 
-    def reset(self) -> None:
+    def _reset(self) -> None:
         """Empty the contents of this SCUWeedingSet."""
         self.reference_docs = []
         self.scu_sudoc_row_nums_for_matches = set()
         self.scu_rows_not_matched = []
         self.scu_rows_matched = []
 
-    def read_from_file(self, fdlp_reference_doc: FDLPReferenceDoc) -> None:
+    def _read_from_file(self, fdlp_reference_doc: FDLPReferenceDoc) -> None:
         """Read through an FDLP reference file and find matching information.
 
         Args:
@@ -172,7 +172,7 @@ class FDLPSearcher:
                     for row_num in rows_nums:
                         self.scu_sudoc_row_nums_for_matches.add(int(row_num))
 
-    def separate_rows(self) -> None:
+    def _separate_rows(self) -> None:
         """Separate the matched SCU rows from the unmatched.
 
         This function should be run after read_from_file() has been used to read in
@@ -189,7 +189,26 @@ class FDLPSearcher:
     #                         Single-Function Search Interface
     # ----------------------------------------------------------------------------------
 
-    # def search_fdlp_references(self):
+    def search_fdlp_references(
+        self, fdlp_reference_docs: Iterable[FDLPReferenceDoc]
+    ) -> None:
+        """Search the given FDLP Reference documents for matches in our weeding set.
+
+        Args:
+            fdlp_reference_docs: An iterable collection of FDLPReferenceDocument
+                instances.
+
+        Return:
+            None. The search collects the data inside of this class so that it can
+                then be written out to file using write_matches_to_file.
+        """
+        # Reset this class so that it can start a fresh search.
+        self._reset()
+        # Read in the FDLp reference information from each document.
+        for reference_doc in fdlp_reference_docs:
+            self._read_from_file(reference_doc)
+        # Then separate out the results into matches and non-matches.
+        self._separate_rows()
 
     # ----------------------------------------------------------------------------------
     #                             Results Writing Functions
