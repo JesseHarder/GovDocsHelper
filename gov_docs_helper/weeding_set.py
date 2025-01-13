@@ -1,6 +1,7 @@
-from _csv import reader as csv_reader
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Dict, List
+
+from _csv import reader as csv_reader
 
 from gov_docs_helper.utils import simplify_sudoc_number
 
@@ -8,27 +9,22 @@ from gov_docs_helper.utils import simplify_sudoc_number
 class WeedingSet:
     """The sudoc numbers that we want to locate in the FDLP set."""
 
-    def __init__(self, weeding_set_file: Optional[Path] = None) -> None:
+    def __init__(self, weeding_set_file: Path) -> None:
         """Initialize an SCUWeedingSet.
 
-        If a file is provided to read from, the initialization will read from it and
-        be set based on the file's contents. If no file is provided, then the set will
-        start as an empty file.
-
         Args:
-              weeding_set_file: an optional file from which to read in the weeding
-                set information.
+              weeding_set_file: the path to the CSV file from which to read in the
+                weeding set information.
         """
         self.headers: List[str] = []
         self.sudoc_numbers: set = set()
         self.sudoc_number_to_row_nums: Dict[str, str] = {}
         self.sudoc_row_num_to_row: Dict[int, List[str]] = {}
 
-        # If an input file was provided, read in its contents.
-        if weeding_set_file:
-            self.read_from_file(weeding_set_file)
+        # Read in the contents of the weeding set csv file that
+        self._read_from_file(weeding_set_file)
 
-    def read_from_file(self, scu_weeding_set_file: Path) -> None:
+    def _read_from_file(self, scu_weeding_set_file: Path) -> None:
         """Read in the contents of the given CSV file and add it to the weeding set.
 
         Args:
@@ -58,10 +54,3 @@ class WeedingSet:
                     self.sudoc_number_to_row_nums[
                         simplified_scu_sudoc_number
                     ] += f",{row_number}"
-
-    def reset(self) -> None:
-        """Empty the contents of this SCUWeedingSet."""
-        self.sudoc_numbers = set()
-        self.sudoc_number_to_row_nums = {}
-        self.sudoc_row_num_to_row = {}
-        self.headers = []
