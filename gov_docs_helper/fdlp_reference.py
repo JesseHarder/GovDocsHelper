@@ -215,6 +215,20 @@ class FDLPSearcher:
     # ----------------------------------------------------------------------------------
 
     def write_matches_to_file(self, output_dir: Path) -> None:
+        """Write out FDLP file rows with matches in the weeding set.
+
+        This function writes out copies of the FDLP reference documents containing only
+        those rows for which matches were found in the weeding set. Each output
+        document will have the same filename as the original document in which the
+        matching row was found, with "matched_" appened to the front of the name.
+        Further, two additional columns will be added to the end of each row. The
+        first will contain the number of the row in the original FDLP document. The
+        second will contain one or row numbers for the row or rows in the weeding set
+        that matched to that FDLP reference document row.
+
+        Args:
+            output_dir: a Path to the directory into which to write the files.
+        """
         # Create the directory into which to write the output.
         output_dir.mkdir(parents=True, exist_ok=True)
         # Create the results that we want to write out.

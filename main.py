@@ -6,8 +6,8 @@ from typing import List, Optional
 from gov_docs_helper.fdlp_reference import FDLPReferenceDoc, FDLPSearcher
 from gov_docs_helper.weeding_set import WeedingSet
 from gov_docs_helper.writers import (
-    write_scu_file_rows_matched,
-    write_scu_file_rows_not_matched,
+    write_seeding_set_file_rows_matched,
+    write_weeding_set_file_rows_not_matched,
 )
 
 # Build the argument parser for main.
@@ -49,9 +49,6 @@ def perform_sudoc_match(
         scu_weeding_set_file: a path to the CSV file containing the weeding set.
         output_dir: where the results from the search should be saved. If not
             provided, the results will only be returned.
-        fdlp_sudoc_number_column_index: The index for the column that contains the sudoc
-            numbers in the FDLP file, where the first column in the file has index 0.
-            Default = 2.
 
     Returns:
         A dictionary mapping row numbers to the rows (list of strings with the first
@@ -88,15 +85,17 @@ def perform_sudoc_match(
     if output_dir:
         # Write out the FDLP file rows for which matches were found.
         fdlp_reader.write_matches_to_file(output_dir=output_dir)
-        write_scu_file_rows_matched(
-            scu_rows_matched=fdlp_reader.scu_rows_matched,
+        write_seeding_set_file_rows_matched(
+            weeding_set_rows_matched=fdlp_reader.scu_rows_matched,
             headers_row=scu_weeding_set.headers,
             output_dir=output_dir,
+            file_name="scu_rows_matched.csv",
         )
-        write_scu_file_rows_not_matched(
-            scu_rows_not_matched=fdlp_reader.scu_rows_not_matched,
+        write_weeding_set_file_rows_not_matched(
+            weeding_set_rows_not_matched=fdlp_reader.scu_rows_not_matched,
             headers_row=scu_weeding_set.headers,
             output_dir=output_dir,
+            not_matches_dir_name="scu_rows_not_matched",
         )
 
     # ------ Step 4 - Return -----
