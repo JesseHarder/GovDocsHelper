@@ -27,22 +27,32 @@ class FDLPReferenceDoc:
         return hash(self.file_path)
 
 
-class FDLPReader:
+class FDLPSearcher:
     """Class to read through an FDLP file and extract the needed information."""
 
-    def __init__(self, scu_weeding_set: WeedingSet):
+    def __init__(self, scu_weeding_set: WeedingSet) -> None:
         """Initialize an FDLPReader.
 
         Args:
-            scu_weeding_set: an SCUWeedingSet instance.
+            scu_weeding_set: the WeedingSet instance that the FDLPSearcher will compare
+                against when it scans through the FLDP file(s).
         """
         # The SCUWeedingSet off which on which to match.
-        self.scu_weeding_set: WeedingSet = scu_weeding_set
+        self.weeding_set: WeedingSet = scu_weeding_set
 
         self.reference_docs: List[FDLPReferenceDoc] = []
         self.scu_sudoc_row_nums_for_matches: Set[int] = set()
         self.scu_rows_not_matched: List[List[str]] = []
         self.scu_rows_matched: List[List[str]] = []
+
+    @property
+    def num_docs(self) -> int:
+        """Get the number of reference documents that we currently have."""
+        return len(self.reference_docs)
+
+    # ----------------------------------------------------------------------------------
+    #                                  Searching Steps
+    # ----------------------------------------------------------------------------------
 
     def reset(self) -> None:
         """Empty the contents of this SCUWeedingSet."""
@@ -50,11 +60,6 @@ class FDLPReader:
         self.scu_sudoc_row_nums_for_matches = set()
         self.scu_rows_not_matched = []
         self.scu_rows_matched = []
-
-    @property
-    def num_docs(self) -> int:
-        """Get the number of reference documents that we currently have."""
-        return len(self.reference_docs)
 
     def read_from_file(
         self,
@@ -116,10 +121,10 @@ class FDLPReader:
                 # Get the sudoc number from the specified column
                 fdlp_sudoc_number: str = row[sudoc_number_column_index]
                 simplified_sudoc_number = simplify_sudoc_number(fdlp_sudoc_number)
-                if simplified_sudoc_number in self.scu_weeding_set.sudoc_numbers:
+                if simplified_sudoc_number in self.weeding_set.sudoc_numbers:
                     # Record the FDLP row as of interest.
                     reference_doc.rows_of_interest[fdlp_row_index] = row
-                    rows_nums = self.scu_weeding_set.sudoc_number_to_row_nums[
+                    rows_nums = self.weeding_set.sudoc_number_to_row_nums[
                         simplified_sudoc_number
                     ].split(",")
                     for row_num in rows_nums:
@@ -132,11 +137,21 @@ class FDLPReader:
         information from one or more FDLP reference files.
         """
         # Split the rows that need removing from the ones that don't.
-        for scu_row_num, row in self.scu_weeding_set.sudoc_row_num_to_row.items():
+        for scu_row_num, row in self.weeding_set.sudoc_row_num_to_row.items():
             if scu_row_num in self.scu_sudoc_row_nums_for_matches:
                 self.scu_rows_matched.append(row)
             else:
                 self.scu_rows_not_matched.append(row)
+
+    # ----------------------------------------------------------------------------------
+    #                         Single-Function Search Interface
+    # ----------------------------------------------------------------------------------
+
+    # def search_fdlp_references(self):
+
+    # ----------------------------------------------------------------------------------
+    #                             Results Writing Functions
+    # ----------------------------------------------------------------------------------
 
     def write_matches_to_file(self, output_dir: Path) -> None:
         # Create the directory into which to write the output.
@@ -154,7 +169,7 @@ class FDLPReader:
                 )
                 added_columns = [
                     row_number,
-                    self.scu_weeding_set.sudoc_number_to_row_nums[sudoc_num],
+                    self.weeding_set.sudoc_number_to_row_nums[sudoc_num],
                 ]
                 out_row = doc_row + added_columns
                 rows.append(out_row)
