@@ -3,7 +3,8 @@ from argparse import ArgumentParser
 from pathlib import Path
 from typing import Optional
 
-from gov_docs_helper.readers import FDLPReader, SCUWeedingSet
+from gov_docs_helper.readers import FDLPReader
+from gov_docs_helper.weeding_set import WeedingSet
 from gov_docs_helper.writers import (
     write_scu_file_rows_matched,
     write_scu_file_rows_not_matched,
@@ -59,7 +60,7 @@ def perform_sudoc_match(
     # ------ Step 1 - Build our set of interest -----
     # Create the set of sudoc numbers from our weeding set that we want to locate in
     # the FDLP set.
-    scu_weeding_set = SCUWeedingSet(scu_weeding_set_file)
+    scu_weeding_set = WeedingSet(scu_weeding_set_file)
 
     # ------ Step 2 - Search the FDLP reference -----
     fdlp_reader = FDLPReader(scu_weeding_set)
@@ -87,12 +88,12 @@ def perform_sudoc_match(
         fdlp_reader.write_matches_to_file(output_dir=output_dir)
         write_scu_file_rows_matched(
             scu_rows_matched=fdlp_reader.scu_rows_matched,
-            headers_row=scu_weeding_set.scu_sudoc_headers,
+            headers_row=scu_weeding_set.headers,
             output_dir=output_dir,
         )
         write_scu_file_rows_not_matched(
             scu_rows_not_matched=fdlp_reader.scu_rows_not_matched,
-            headers_row=scu_weeding_set.scu_sudoc_headers,
+            headers_row=scu_weeding_set.headers,
             output_dir=output_dir,
         )
 
