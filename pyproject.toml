@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gov_docs_helper"
-version = "0.0.1"
+version = "0.2.0"
 authors = [
     {name = "Jesse Harder", email = "jessehharder@gmail.com"},
     {name = "Jesse Randolph", email = "lafingfoxx@gmail.com"},
@@ -29,3 +29,7 @@ test = [
     "pytest-dotenv",
     "types-requests"
 ]
+
+[tool.setuptools.packages.find]
+include = ["gov_docs_helper*"]
+exclude = ["docs*", "tests*", "spreadsheets*"]
