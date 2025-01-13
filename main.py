@@ -1,9 +1,9 @@
 """A script to search for gov-docs of interest."""
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
-from gov_docs_helper.readers import FDLPReader
+from gov_docs_helper.fdlp_reference import FDLPReferenceDoc, FDLPSearcher
 from gov_docs_helper.weeding_set import WeedingSet
 from gov_docs_helper.writers import (
     write_scu_file_rows_matched,
@@ -38,7 +38,7 @@ def perform_sudoc_match(
     fdlp_reference_set_file_post_exchange: Path,
     scu_weeding_set_file: Path,
     output_dir: Optional[Path] = None,
-) -> FDLPReader:
+) -> FDLPSearcher:
     """Search for entries in the reference set from the weeding set .
 
     Args:
@@ -63,23 +63,27 @@ def perform_sudoc_match(
     scu_weeding_set = WeedingSet(scu_weeding_set_file)
 
     # ------ Step 2 - Search the FDLP reference -----
-    fdlp_reader = FDLPReader(scu_weeding_set)
-    fdlp_reader.read_from_file(
-        fdlp_reference_set_file_pre_exchange,
-        skip_rows=1,
-        sudoc_number_column_index=2,
-        classification_type="SuDoc",
-        classification_type_column_index=1,
-        header_row_index=0,
-    )
-    fdlp_reader.read_from_file(
-        fdlp_reference_set_file_post_exchange,
-        skip_rows=0,
-        sudoc_number_column_index=6,
-        classification_type="SuDoc",
-        classification_type_column_index=0,
-        header_row_index=None,
-    )
+    fdlp_reader = FDLPSearcher(scu_weeding_set)
+    fdlp_reference_docs: List[FDLPReferenceDoc] = [
+        FDLPReferenceDoc(
+            fdlp_reference_set_file_pre_exchange,
+            skip_rows=1,
+            sudoc_number_column_index=2,
+            classification_type="SuDoc",
+            classification_type_column_index=1,
+            header_row_index=0,
+        ),
+        FDLPReferenceDoc(
+            fdlp_reference_set_file_post_exchange,
+            skip_rows=0,
+            sudoc_number_column_index=6,
+            classification_type="SuDoc",
+            classification_type_column_index=0,
+            header_row_index=None,
+        ),
+    ]
+    fdlp_reader.read_from_file(fdlp_reference_docs[0])
+    fdlp_reader.read_from_file(fdlp_reference_docs[1])
     fdlp_reader.separate_rows()
 
     # ------ Step 3 - Optionally write the results to file. -----

@@ -1,30 +1,95 @@
 """Module containing code for reading information out of our input CSV files."""
 
+from __future__ import annotations
+
 from csv import reader as csv_reader
 from csv import writer as csv_writer
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from gov_docs_helper.utils import simplify_sudoc_number
 from gov_docs_helper.weeding_set import WeedingSet
 
+# --------------------------------------------------------------------------------------
+#                      FDLP Reference Document Data Representation
+# --------------------------------------------------------------------------------------
+
 
 @dataclass
 class FDLPReferenceDoc:
-    """A data representation for the information we want to track about FDLP docs."""
+    """A data representation for the information we want to track about FDLP docs.
+
+    Attributes:
+        file_path: the csv file from which to read.
+        skip_rows: the number of rows to skip at the top of the file before reading
+            for actual content. Typically, these are empty rows or a header row.
+            Default = 1.
+        sudoc_number_column_index: The index for the column that contains the sudoc
+            numbers, where the first column in the file has index 0. Default = 2.
+        classification_type: a string to match for the correct classification type.
+            Any row with a different classification type will be ignored. If None,
+            then all classification types will be accepted. Default = "SuDoc".
+        classification_type_column_index: The index for the column that
+            contains the classification_types, where the first column in the file
+            has index 0. Default = 1.
+        header_row_index: The index for the row that contains the column headers,
+            where the first row in the file has index 0. If None, then we assume no
+            header row. Default = 0.
+    """
 
     file_path: Path
-    file_num: int
     skip_rows: int
     sudoc_number_column_index: int
     classification_type: Optional[str]
     classification_type_column_index: int
-    headers: Optional[List[str]] = None
-    rows_of_interest: Dict[int, List[str]] = field(default_factory=dict)
+    header_row_index: Optional[int]
 
-    def __hash__(self):
-        return hash(self.file_path)
+
+class _SearcherReferenceDoc:
+    """And extension of the FDLPReferenceDoc.
+
+    We use this class to track information about each reference doc as we search it.
+    These additional fields do not need to be exposed outside of this module and the
+    user does not need to know about them in order to provide the needed information
+    in the form of the public FDLPReferenceDoc class.
+    """
+
+    def __init__(self, reference_doc: FDLPReferenceDoc) -> None:
+        """Initialize a _SearcherReferenceDoc.
+
+        Args:
+            reference_doc: An FDLPReferenceDoc that we are extending.
+        """
+        self._fdlp_reference_doc: FDLPReferenceDoc = reference_doc
+
+        self.file_num: int
+        self.headers: Optional[List[str]] = None
+        self.rows_of_interest: Dict[int, List[str]] = {}
+
+    @property
+    def file_path(self) -> Path:
+        return self._fdlp_reference_doc.file_path
+
+    @property
+    def skip_rows(self) -> int:
+        return self._fdlp_reference_doc.skip_rows
+
+    @property
+    def sudoc_number_column_index(self) -> int:
+        return self._fdlp_reference_doc.sudoc_number_column_index
+
+    @property
+    def classification_type(self) -> Optional[str]:
+        return self._fdlp_reference_doc.classification_type
+
+    @property
+    def classification_type_column_index(self) -> int:
+        return self._fdlp_reference_doc.classification_type_column_index
+
+    @property
+    def header_row_index(self) -> Optional[int]:
+        return self._fdlp_reference_doc.header_row_index
 
 
 class FDLPSearcher:
@@ -40,7 +105,7 @@ class FDLPSearcher:
         # The SCUWeedingSet off which on which to match.
         self.weeding_set: WeedingSet = scu_weeding_set
 
-        self.reference_docs: List[FDLPReferenceDoc] = []
+        self.reference_docs: List[_SearcherReferenceDoc] = []
         self.scu_sudoc_row_nums_for_matches: Set[int] = set()
         self.scu_rows_not_matched: List[List[str]] = []
         self.scu_rows_matched: List[List[str]] = []
@@ -61,65 +126,42 @@ class FDLPSearcher:
         self.scu_rows_not_matched = []
         self.scu_rows_matched = []
 
-    def read_from_file(
-        self,
-        fdlp_reference_set_file: Path,
-        skip_rows: int = 1,
-        sudoc_number_column_index: int = 2,
-        classification_type: Optional[str] = "SuDoc",
-        classification_type_column_index: int = 1,
-        header_row_index: Optional[int] = 0,
-    ) -> None:
+    def read_from_file(self, fdlp_reference_doc: FDLPReferenceDoc) -> None:
         """Read through an FDLP reference file and find matching information.
 
         Args:
-            fdlp_reference_set_file: the csv file from which to read.
-            skip_rows: the number of rows to skip at the top of the file before reading
-                for actual content. Typically, these are empty rows or a header row.
-                Default = 1.
-            sudoc_number_column_index: The index for the column that contains the sudoc
-                numbers, where the first column in the file has index 0. Default = 2.
-            classification_type: a string to match for the correct classification type.
-                Any row with a different classifiction type will be ignored. If None,
-                then all classification types will be accepted. Default = "SuDoc".
-            classification_type_column_index: The index for the column that
-                contains the classification_types, where the first column in the file
-                has index 0. Default = 1.
-            header_row_index: The index for the row that contains the column headers,
-                where the first row in the file has index 0. If None, then we assume no
-                header row. Default = 0.
+            fdlp_reference_doc: an FDLPReferenceDoc instance.
         Returns:
             None
         """
+        reference_doc = _SearcherReferenceDoc(fdlp_reference_doc)
         # Create a new reference document and add it to our collection of them.
-        reference_doc = FDLPReferenceDoc(
-            file_path=fdlp_reference_set_file,
-            file_num=self.num_docs,
-            skip_rows=skip_rows,
-            sudoc_number_column_index=sudoc_number_column_index,
-            classification_type=classification_type,
-            classification_type_column_index=classification_type_column_index,
-        )
         self.reference_docs.append(reference_doc)
 
-        with fdlp_reference_set_file.open("r") as file_pointer:
+        with reference_doc.file_path.open("r") as file_pointer:
             reader = csv_reader(file_pointer)
             # Iterate over the rest, looking for matches.
             for fdlp_row_index, row in enumerate(reader):
                 # If we have a header row and have reached it, save it in our
                 # reference doc.
-                if header_row_index is not None and fdlp_row_index == header_row_index:
+                if (
+                    reference_doc.header_row_index is not None
+                    and fdlp_row_index == reference_doc.header_row_index
+                ):
                     reference_doc.headers = row
                     continue
                 # If we're within the rows that need to be skipped, we'll skip it.
-                if fdlp_row_index < skip_rows:
+                if fdlp_row_index < reference_doc.skip_rows:
                     continue
                 # Skip the row if it has an invalid classification type:
-                if classification_type:
-                    if row[classification_type_column_index] != classification_type:
+                if reference_doc.classification_type:
+                    if (
+                        row[reference_doc.classification_type_column_index]
+                        != reference_doc.classification_type
+                    ):
                         continue
                 # Get the sudoc number from the specified column
-                fdlp_sudoc_number: str = row[sudoc_number_column_index]
+                fdlp_sudoc_number: str = row[reference_doc.sudoc_number_column_index]
                 simplified_sudoc_number = simplify_sudoc_number(fdlp_sudoc_number)
                 if simplified_sudoc_number in self.weeding_set.sudoc_numbers:
                     # Record the FDLP row as of interest.
