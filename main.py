@@ -36,7 +36,7 @@ parser.add_argument(
 def perform_sudoc_match(
     fdlp_reference_set_file_pre_exchange: Path,
     fdlp_reference_set_file_post_exchange: Path,
-    scu_weeding_set_file: Path,
+    weeding_set_file: Path,
     output_dir: Optional[Path] = None,
 ) -> FDLPSearcher:
     """Search for entries in the reference set from the weeding set .
@@ -46,7 +46,7 @@ def perform_sudoc_match(
             before the exchange.
         fdlp_reference_set_file_post_exchange: a path to the reference set CSV file
             from after the exchange.
-        scu_weeding_set_file: a path to the CSV file containing the weeding set.
+        weeding_set_file: a path to the CSV file containing the weeding set.
         output_dir: where the results from the search should be saved. If not
             provided, the results will only be returned.
 
@@ -57,7 +57,7 @@ def perform_sudoc_match(
     # ------ Step 1 - Build our set of interest -----
     # Create the set of sudoc numbers from our weeding set that we want to locate in
     # the FDLP set.
-    scu_weeding_set = WeedingSet(scu_weeding_set_file)
+    weeding_set = WeedingSet(weeding_set_file)
 
     # ------ Step 2 - Search the FDLP reference -----
     fdlp_reference_docs: List[FDLPReferenceDoc] = [
@@ -78,40 +78,40 @@ def perform_sudoc_match(
             header_row_index=None,
         ),
     ]
-    fdlp_reader = FDLPSearcher(scu_weeding_set)
-    fdlp_reader.search_fdlp_references(fdlp_reference_docs)
+    fdlp_searcher = FDLPSearcher(weeding_set)
+    fdlp_searcher.search_fdlp_references(fdlp_reference_docs)
 
     # ------ Step 3 - Optionally write the results to file. -----
     if output_dir:
         # Write out the FDLP file rows for which matches were found.
-        fdlp_reader.write_matches_to_file(output_dir=output_dir)
+        fdlp_searcher.write_matches_to_file(output_dir=output_dir)
         write_weeding_set_file_rows_matched(
-            weeding_set_rows_matched=fdlp_reader.scu_rows_matched,
-            headers_row=scu_weeding_set.headers,
+            weeding_set_rows_matched=fdlp_searcher.weeding_set_rows_matched,
+            headers_row=weeding_set.headers,
             output_dir=output_dir,
             file_name="scu_rows_matched.csv",
         )
         write_weeding_set_file_rows_not_matched(
-            weeding_set_rows_not_matched=fdlp_reader.scu_rows_not_matched,
-            headers_row=scu_weeding_set.headers,
+            weeding_set_rows_not_matched=fdlp_searcher.weeding_set_rows_not_matched,
+            headers_row=weeding_set.headers,
             output_dir=output_dir,
             not_matches_dir_name="scu_rows_not_matched",
         )
 
     # ------ Step 4 - Return -----
-    return fdlp_reader
+    return fdlp_searcher
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    fdlp_reader = perform_sudoc_match(
+    fdlp_searcher = perform_sudoc_match(
         fdlp_reference_set_file_pre_exchange=Path(args.fdlp_pre),
         fdlp_reference_set_file_post_exchange=Path(args.fdlp_post),
-        scu_weeding_set_file=Path(args.scu),
+        weeding_set_file=Path(args.scu),
         output_dir=Path(args.out) if args.out else None,
     )
     num_rows_of_interest = sum(
         len(reference_doc.rows_of_interest)
-        for reference_doc in fdlp_reader.reference_docs
+        for reference_doc in fdlp_searcher.reference_docs
     )
     print(f"Found {num_rows_of_interest} matches.")

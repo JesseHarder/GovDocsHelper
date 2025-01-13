@@ -95,20 +95,20 @@ class _SearcherReferenceDoc:
 class FDLPSearcher:
     """Class to read through an FDLP file and extract the needed information."""
 
-    def __init__(self, scu_weeding_set: WeedingSet) -> None:
+    def __init__(self, weeding_set: WeedingSet) -> None:
         """Initialize an FDLPReader.
 
         Args:
-            scu_weeding_set: the WeedingSet instance that the FDLPSearcher will compare
+            weeding_set: the WeedingSet instance that the FDLPSearcher will compare
                 against when it scans through the FLDP file(s).
         """
         # The SCUWeedingSet off which on which to match.
-        self.weeding_set: WeedingSet = scu_weeding_set
+        self.weeding_set: WeedingSet = weeding_set
 
         self.reference_docs: List[_SearcherReferenceDoc] = []
-        self.scu_sudoc_row_nums_for_matches: Set[int] = set()
-        self.scu_rows_not_matched: List[List[str]] = []
-        self.scu_rows_matched: List[List[str]] = []
+        self.sudoc_row_nums_for_matches: Set[int] = set()
+        self.weeding_set_rows_not_matched: List[List[str]] = []
+        self.weeding_set_rows_matched: List[List[str]] = []
 
     @property
     def num_docs(self) -> int:
@@ -122,9 +122,9 @@ class FDLPSearcher:
     def _reset(self) -> None:
         """Empty the contents of this SCUWeedingSet."""
         self.reference_docs = []
-        self.scu_sudoc_row_nums_for_matches = set()
-        self.scu_rows_not_matched = []
-        self.scu_rows_matched = []
+        self.sudoc_row_nums_for_matches = set()
+        self.weeding_set_rows_not_matched = []
+        self.weeding_set_rows_matched = []
 
     def _read_from_file(self, fdlp_reference_doc: FDLPReferenceDoc) -> None:
         """Read through an FDLP reference file and find matching information.
@@ -170,7 +170,7 @@ class FDLPSearcher:
                         simplified_sudoc_number
                     ].split(",")
                     for row_num in rows_nums:
-                        self.scu_sudoc_row_nums_for_matches.add(int(row_num))
+                        self.sudoc_row_nums_for_matches.add(int(row_num))
 
     def _separate_rows(self) -> None:
         """Separate the matched SCU rows from the unmatched.
@@ -179,11 +179,11 @@ class FDLPSearcher:
         information from one or more FDLP reference files.
         """
         # Split the rows that need removing from the ones that don't.
-        for scu_row_num, row in self.weeding_set.sudoc_row_num_to_row.items():
-            if scu_row_num in self.scu_sudoc_row_nums_for_matches:
-                self.scu_rows_matched.append(row)
+        for weeding_set_row_num, row in self.weeding_set.sudoc_row_num_to_row.items():
+            if weeding_set_row_num in self.sudoc_row_nums_for_matches:
+                self.weeding_set_rows_matched.append(row)
             else:
-                self.scu_rows_not_matched.append(row)
+                self.weeding_set_rows_not_matched.append(row)
 
     # ----------------------------------------------------------------------------------
     #                         Single-Function Search Interface

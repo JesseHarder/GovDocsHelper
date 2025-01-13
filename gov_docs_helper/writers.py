@@ -20,12 +20,12 @@ def write_weeding_set_file_rows_matched(
     """
     # Create the directory into which to write the output.
     output_dir.mkdir(parents=True, exist_ok=True)
-    scu_rows_matched_output_file = output_dir / file_name
+    weeding_set_rows_matched_output_file = output_dir / file_name
     # Create the results that we want to write out.
     rows = [headers_row] + weeding_set_rows_matched
 
     # Write to file.
-    with scu_rows_matched_output_file.open("w") as file_pointer:
+    with weeding_set_rows_matched_output_file.open("w") as file_pointer:
         writer = csv_writer(file_pointer)
         writer.writerows(rows)
 
