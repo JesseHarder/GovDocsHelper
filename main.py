@@ -6,7 +6,7 @@ from typing import List, Optional
 from gov_docs_helper.fdlp_reference import FDLPReferenceDoc, FDLPSearcher
 from gov_docs_helper.weeding_set import WeedingSet
 from gov_docs_helper.writers import (
-    write_seeding_set_file_rows_matched,
+    write_weeding_set_file_rows_matched,
     write_weeding_set_file_rows_not_matched,
 )
 
@@ -85,7 +85,7 @@ def perform_sudoc_match(
     if output_dir:
         # Write out the FDLP file rows for which matches were found.
         fdlp_reader.write_matches_to_file(output_dir=output_dir)
-        write_seeding_set_file_rows_matched(
+        write_weeding_set_file_rows_matched(
             weeding_set_rows_matched=fdlp_reader.scu_rows_matched,
             headers_row=scu_weeding_set.headers,
             output_dir=output_dir,

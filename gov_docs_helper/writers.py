@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 
 
-def write_seeding_set_file_rows_matched(
+def write_weeding_set_file_rows_matched(
     weeding_set_rows_matched: List[List[str]],
     headers_row: List[str],
     output_dir: Path,
