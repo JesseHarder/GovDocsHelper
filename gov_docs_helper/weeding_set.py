@@ -49,12 +49,12 @@ class WeedingSet:
         with weeding_set_file.open("r") as file_pointer:
             reader = csv_reader(file_pointer)
             # Grab the first row which has the headers.
-            weeding_set_headers: List[str] = next(reader)
+            self.headers = next(reader)
             # Build a set from the rest of the rows.
             for row_number, row in enumerate(reader, 2):
                 self.sudoc_row_num_to_row[row_number] = row
                 sudoc_number: str = row[
-                    weeding_set_headers.index(self._sudoc_number_header)
+                    self.headers.index(self._sudoc_number_header)
                 ]
                 simplified_sudoc_number = simplify_sudoc_number(sudoc_number)
                 self.sudoc_numbers.add(simplified_sudoc_number)
