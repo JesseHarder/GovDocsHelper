@@ -31,6 +31,12 @@ parser.add_argument(
     "this directory does not exist, it will be created. Provide an empty string "
     "if you wish to skip writing out to file.",
 )
+parser.add_argument(
+    "--max-rows",
+    type=int,
+    default=250,
+    help="The maximum number of rows that the output sheets can have."
+)
 
 
 def perform_sudoc_match(
@@ -38,6 +44,7 @@ def perform_sudoc_match(
     fdlp_reference_set_file_post_exchange: Path,
     weeding_set_file: Path,
     output_dir: Optional[Path] = None,
+    max_rows: int = 250,
 ) -> FDLPSearcher:
     """Search for entries in the reference set from the weeding set .
 
@@ -49,6 +56,10 @@ def perform_sudoc_match(
         weeding_set_file: a path to the CSV file containing the weeding set.
         output_dir: where the results from the search should be saved. If not
             provided, the results will only be returned.
+        max_rows: what is the maximum number of rows that may appear in each CSV file.
+            This will be used to determine how to split up the information that is
+            being written out. Default = 250. (Note: this code includes the header row
+            in the count of the number of rows.)
 
     Returns:
         A dictionary mapping row numbers to the rows (list of strings with the first
@@ -96,6 +107,7 @@ def perform_sudoc_match(
             headers_row=weeding_set.headers,
             output_dir=output_dir,
             not_matches_dir_name="scu_rows_not_matched",
+            max_rows=max_rows
         )
 
     # ------ Step 4 - Return -----
@@ -109,6 +121,7 @@ if __name__ == "__main__":
         fdlp_reference_set_file_post_exchange=Path(args.fdlp_post),
         weeding_set_file=Path(args.scu),
         output_dir=Path(args.out) if args.out else None,
+        max_rows=args.max_rows
     )
     num_rows_of_interest = sum(
         len(reference_doc.rows_of_interest)
