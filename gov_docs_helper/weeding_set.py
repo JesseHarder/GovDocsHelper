@@ -53,9 +53,7 @@ class WeedingSet:
             # Build a set from the rest of the rows.
             for row_number, row in enumerate(reader, 2):
                 self.sudoc_row_num_to_row[row_number] = row
-                sudoc_number: str = row[
-                    self.headers.index(self._sudoc_number_header)
-                ]
+                sudoc_number: str = row[self.headers.index(self._sudoc_number_header)]
                 simplified_sudoc_number = simplify_sudoc_number(sudoc_number)
                 self.sudoc_numbers.add(simplified_sudoc_number)
                 # Record the row the sudoc number was found on.

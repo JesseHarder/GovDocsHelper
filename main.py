@@ -12,17 +12,22 @@ from gov_docs_helper.writers import (
 
 # Build the argument parser for main.
 parser = ArgumentParser(prog="GovDocsHelper", description="Searches for sudoc matches.")
+parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClaraTDDocs.csv")
 parser.add_argument(
     "--fdlp-pre",
     type=str,
-    default="./spreadsheets/PreviousFDLPDisposalListOffersThroughAugust2021.csv",
+    default=None,  # Try "./spreadsheets/PreviousFDLPDisposalListOffersThroughAugust2021.csv",
 )
 parser.add_argument(
     "--fdlp-post",
     type=str,
-    default="./spreadsheets/FDLP-eXchange-offers-2022-01-to-2024-02.csv",
+    default=None,  # Try "./spreadsheets/FDLP-eXchange-offers-2022-01-to-2024-12.csv",
 )
-parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClaraTDDocs.csv")
+parser.add_argument(
+    "--fdlp-barcodes",
+    type=str,
+    default=None,  # Try "./spreadsheets/Barcoded_Items_at_CSL.csv",
+)
 parser.add_argument(
     "--out",
     type=str,
@@ -35,25 +40,33 @@ parser.add_argument(
     "--max-rows",
     type=int,
     default=250,
-    help="The maximum number of rows that the output sheets can have."
+    help="The maximum number of rows that the output sheets can have.",
 )
 
 
 def perform_sudoc_match(
-    fdlp_reference_set_file_pre_exchange: Path,
-    fdlp_reference_set_file_post_exchange: Path,
     weeding_set_file: Path,
+    fdlp_reference_set_file_pre_exchange: Optional[Path],
+    fdlp_reference_set_file_post_exchange: Optional[Path],
+    fdlp_reference_set_file_barcodes: Optional[Path],
     output_dir: Optional[Path] = None,
     max_rows: int = 250,
 ) -> FDLPSearcher:
-    """Search for entries in the reference set from the weeding set .
+    """Search for entries in the reference set from the weeding set.
+
+    You must provide one of the following:
+        fdlp_reference_set_file_pre_exchange
+        fdlp_reference_set_file_post_exchange
+        fdlp_reference_set_file_barcodes
 
     Args:
+        weeding_set_file: a path to the CSV file containing the weeding set.
         fdlp_reference_set_file_pre_exchange: a path to the reference set CSV file from
             before the exchange.
         fdlp_reference_set_file_post_exchange: a path to the reference set CSV file
             from after the exchange.
-        weeding_set_file: a path to the CSV file containing the weeding set.
+        fdlp_reference_set_file_barcodes: a path to the reference set CSV file
+            for barcoded items.
         output_dir: where the results from the search should be saved. If not
             provided, the results will only be returned.
         max_rows: what is the maximum number of rows that may appear in each CSV file.
@@ -65,30 +78,60 @@ def perform_sudoc_match(
         A dictionary mapping row numbers to the rows (list of strings with the first
             value being the sudoc number)
     """
+    # Check that at least one fdlp file was provided.
+    if (
+        fdlp_reference_set_file_pre_exchange is None
+        and fdlp_reference_set_file_post_exchange is None
+        and fdlp_reference_set_file_barcodes is None
+    ):
+        raise ValueError(
+            "At least one of fdlp_reference_set_file_pre_exchange, "
+            "fdlp_reference_set_file_post_exchange, or "
+            "fdlp_reference_set_file_barcodes, must be provided."
+        )
     # ------ Step 1 - Build our set of interest -----
     # Create the set of sudoc numbers from our weeding set that we want to locate in
     # the FDLP set.
     weeding_set = WeedingSet(weeding_set_file)
 
     # ------ Step 2 - Search the FDLP reference -----
-    fdlp_reference_docs: List[FDLPReferenceDoc] = [
-        FDLPReferenceDoc(
-            fdlp_reference_set_file_pre_exchange,
-            skip_rows=1,
-            sudoc_number_column_index=2,
-            classification_type="SuDoc",
-            classification_type_column_index=1,
-            header_row_index=0,
-        ),
-        FDLPReferenceDoc(
-            fdlp_reference_set_file_post_exchange,
-            skip_rows=0,
-            sudoc_number_column_index=6,
-            classification_type="SuDoc",
-            classification_type_column_index=0,
-            header_row_index=None,
-        ),
-    ]
+    fdlp_reference_docs: List[FDLPReferenceDoc] = []
+    # Add the pre-exchange file's set if said file was provided.
+    if fdlp_reference_set_file_pre_exchange:
+        fdlp_reference_docs.append(
+            FDLPReferenceDoc(
+                fdlp_reference_set_file_pre_exchange,
+                skip_rows=1,
+                sudoc_number_column_index=2,
+                classification_type="SuDoc",
+                classification_type_column_index=1,
+                header_row_index=0,
+            )
+        )
+    # Add the post-exchange file's set if said file was provided.
+    if fdlp_reference_set_file_post_exchange:
+        fdlp_reference_docs.append(
+            FDLPReferenceDoc(
+                fdlp_reference_set_file_post_exchange,
+                skip_rows=0,
+                sudoc_number_column_index=6,
+                classification_type="SuDoc",
+                classification_type_column_index=0,
+                header_row_index=None,
+            )
+        )
+    # Add the barcoded items' file's set if said file was provided.
+    if fdlp_reference_set_file_barcodes:
+        fdlp_reference_docs.append(
+            FDLPReferenceDoc(
+                fdlp_reference_set_file_barcodes,
+                skip_rows=2,
+                sudoc_number_column_index=3,
+                classification_type=None,
+                classification_type_column_index=0,
+                header_row_index=1,
+            )
+        )
     fdlp_searcher = FDLPSearcher(weeding_set)
     fdlp_searcher.search_fdlp_references(fdlp_reference_docs)
 
@@ -107,7 +150,7 @@ def perform_sudoc_match(
             headers_row=weeding_set.headers,
             output_dir=output_dir,
             not_matches_dir_name="scu_rows_not_matched",
-            max_rows=max_rows
+            max_rows=max_rows,
         )
 
     # ------ Step 4 - Return -----
@@ -117,11 +160,12 @@ def perform_sudoc_match(
 if __name__ == "__main__":
     args = parser.parse_args()
     fdlp_searcher = perform_sudoc_match(
+        weeding_set_file=Path(args.scu),
         fdlp_reference_set_file_pre_exchange=Path(args.fdlp_pre),
         fdlp_reference_set_file_post_exchange=Path(args.fdlp_post),
-        weeding_set_file=Path(args.scu),
+        fdlp_reference_set_file_barcodes=Path(args.fdlp_barcodes),
         output_dir=Path(args.out) if args.out else None,
-        max_rows=args.max_rows
+        max_rows=args.max_rows,
     )
     num_rows_of_interest = sum(
         len(reference_doc.rows_of_interest)
