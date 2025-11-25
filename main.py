@@ -13,21 +13,12 @@ from gov_docs_helper.writers import (
 # Build the argument parser for main.
 parser = ArgumentParser(prog="GovDocsHelper", description="Searches for sudoc matches.")
 parser.add_argument("--scu", type=str, default="./spreadsheets/SantaClaraTDDocs.csv")
-parser.add_argument(
-    "--fdlp-pre",
-    type=str,
-    default=None,  # Try "./spreadsheets/PreviousFDLPDisposalListOffersThroughAugust2021.csv",
-)
-parser.add_argument(
-    "--fdlp-post",
-    type=str,
-    default=None,  # Try "./spreadsheets/FDLP-eXchange-offers-2022-01-to-2024-12.csv",
-)
-parser.add_argument(
-    "--fdlp-barcodes",
-    type=str,
-    default=None,  # Try "./spreadsheets/Barcoded_Items_at_CSL.csv",
-)
+# Try with "./spreadsheets/PreviousFDLPDisposalListOffersThroughAugust2021.csv",
+parser.add_argument("--fdlp-pre", type=str, required=False)
+# Try with "./spreadsheets/FDLP-eXchange-offers-2022-01-to-2024-12.csv",
+parser.add_argument("--fdlp-post", type=str, required=False)
+# Try with "./spreadsheets/Barcoded_Items_at_CSL.csv",
+parser.add_argument("--fdlp-barcodes", type=str, required=False)
 parser.add_argument(
     "--out",
     type=str,
@@ -161,9 +152,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     fdlp_searcher = perform_sudoc_match(
         weeding_set_file=Path(args.scu),
-        fdlp_reference_set_file_pre_exchange=Path(args.fdlp_pre),
-        fdlp_reference_set_file_post_exchange=Path(args.fdlp_post),
-        fdlp_reference_set_file_barcodes=Path(args.fdlp_barcodes),
+        fdlp_reference_set_file_pre_exchange=Path(args.fdlp_pre) if args.fdlp_pre else None,
+        fdlp_reference_set_file_post_exchange=Path(args.fdlp_post) if args.fdlp_post else None,
+        fdlp_reference_set_file_barcodes=Path(args.fdlp_barcodes) if args.fdlp_barcodes else None,
         output_dir=Path(args.out) if args.out else None,
         max_rows=args.max_rows,
     )
